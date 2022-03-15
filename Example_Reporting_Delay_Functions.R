@@ -6,7 +6,7 @@
 
 ### Developed by Dr. Lauren J. Beesley, PhD
 ### Contact: lvandervort@lanl.gov
-### Last Updated: 10/14/2021
+### Last Updated: 3/10/2022
 
 ### Note: This script provides example functions for handling delayed case reporting for ARMA(2,2) models. 
 ### To avoid issues with 0 case counts, the ARMA models are applied to the log(cases + 0.1) rather than log(cases)
@@ -71,21 +71,22 @@ ARIMA_Vanilla_Dengue = function(DENGUE_SUB, OUTCOME, PREEST, y, OUTCOME_FUNC = N
     ### Fit ARMA Model (ARIMA(p,0,q) = ARMA(p,q)) and Forecast
     ts_input = ts(log(DENGUE_CURRENT[,OUTCOME]+0.1), start = 1, end = length(DENGUE_CURRENT[,1]))
     fit = try(arima(ts_input , order = c(2,0,2), seasonal = list(order = c(0,0,0))), silent = T)
+    
     if(class(fit) != 'try-error'){
       nowcasting = exp(ts_input[length(ts_input)] - fit$residuals[length(fit$residuals)])-0.1
-      forecasting = forecast::forecast(fit,h=1, level = c(50,67,95,99), lambda = NULL)
+      forecasting = forecast::forecast(fit,h=1, level = c(10,20,30,40,50,60,70,80,90,95,98), lambda = NULL)
       ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = as.numeric(exp(forecasting$mean))-0.1, 
                                              forecasting_lower = as.numeric(exp(forecasting$lower))-0.1, 
                                              forecasting_upper = as.numeric(exp(forecasting$upper))-0.1,
                                              nowcasting = nowcasting,
-                                             LEVELS = c(50,67,95,99),
+                                             LEVELS = c(10,20,30,40,50,60,70,80,90,95,98),
                                              CURRENT_WEEK = CURRENT_WEEK))
     }else{
-      ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = rep(NA,4), 
-                                             forecasting_lower = rep(NA,4), 
-                                             forecasting_upper = rep(NA,4), 
-                                             nowcasting = rep(NA,4),
-                                             LEVELS = c(50,67,95,99),
+      ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = rep(NA,11), 
+                                             forecasting_lower = rep(NA,11), 
+                                             forecasting_upper = rep(NA,11), 
+                                             nowcasting = rep(NA,11),
+                                             LEVELS = c(10,20,30,40,50,60,70,80,90,95,98),
                                              CURRENT_WEEK = CURRENT_WEEK))
     }
   }
@@ -114,19 +115,19 @@ ARIMA_Exclude_Dengue = function(DENGUE_SUB, OUTCOME, PREEST, y, EXCLUDE_THRESHOL
     ts_input = ts(log(DENGUE_CURRENT[,OUTCOME]+0.1), start = 1, end = length(DENGUE_CURRENT[,1]))
     fit = try(arima(ts_input , order = c(2,0,2), seasonal = list(order = c(0,0,0))), silent = T)
     if(class(fit) != 'try-error'){
-      forecasting = forecast::forecast(fit,h=EXCLUDE_THRESHOLD+1, level = c(50,67,95,99), lambda = NULL) 
+      forecasting = forecast::forecast(fit,h=EXCLUDE_THRESHOLD+1, level = c(10,20,30,40,50,60,70,80,90,95,98), lambda = NULL) 
       ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = as.numeric(exp(forecasting$mean[EXCLUDE_THRESHOLD+1]))-0.1, 
                                              forecasting_lower = as.numeric(exp(forecasting$lower[EXCLUDE_THRESHOLD+1,]))-0.1, 
                                              forecasting_upper = as.numeric(exp(forecasting$upper[EXCLUDE_THRESHOLD+1,]))-0.1,
                                              nowcasting = as.numeric(exp(forecasting$mean[EXCLUDE_THRESHOLD]))-0.1,
-                                             LEVELS = c(50,67,95,99),
+                                             LEVELS = c(10,20,30,40,50,60,70,80,90,95,98),
                                              CURRENT_WEEK = CURRENT_WEEK))
     }else{
-      ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = rep(NA,4), 
-                                             forecasting_lower = rep(NA,4), 
-                                             forecasting_upper = rep(NA,4), 
-                                             nowcasting = rep(NA,4),
-                                             LEVELS = c(50,67,95,99),
+      ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = rep(NA,11), 
+                                             forecasting_lower = rep(NA,11), 
+                                             forecasting_upper = rep(NA,11), 
+                                             nowcasting = rep(NA,11),
+                                             LEVELS = c(10,20,30,40,50,60,70,80,90,95,98),
                                              CURRENT_WEEK = CURRENT_WEEK))
     }
   }
@@ -177,22 +178,22 @@ ARIMA_Offset_Dengue = function(DENGUE_SUB, OUTCOME, PREEST, y, pi_type = 'Lag'){
                     xreg = matrix(DENGUE_CURRENT$OFFSET), fixed = c(NA,NA,NA,NA,NA,1)), silent = T)
     if(class(fit)[1] != 'try-error'){
       nowcasting = exp(ts_input[length(ts_input)] - fit$residuals[length(fit$residuals)] - DENGUE_CURRENT$OFFSET[length(ts_input)])-0.1
-      quantile_vals = qnorm(p =(100-c(50,67,95,99))*0.01/2, lower.tail = F )
+      quantile_vals = qnorm(p =(100-c(10,20,30,40,50,60,70,80,90,95,98))*0.01/2, lower.tail = F )
       A = stats:::predict.Arima(fit, n.ahead = 4,newxreg = matrix(c(0,0,0,0)))
       B = data.frame(pred = as.numeric(A$pred), se = as.numeric(A$se))
-      forecasting = data.frame(mean = rep(B$pred[1],4), lower = B$pred[1]-quantile_vals*B$se[1], upper = B$pred[1]+quantile_vals*B$se[1])
+      forecasting = data.frame(mean = rep(B$pred[1],11), lower = B$pred[1]-quantile_vals*B$se[1], upper = B$pred[1]+quantile_vals*B$se[1])
       ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = as.numeric(exp(forecasting$mean))-0.1, 
                                              forecasting_lower = as.numeric(exp(forecasting$lower))-0.1, 
                                              forecasting_upper = as.numeric(exp(forecasting$upper))-0.1, 
                                              nowcasting = nowcasting,
-                                             LEVELS = c(50,67,95,99),
+                                             LEVELS = c(10,20,30,40,50,60,70,80,90,95,98),
                                              CURRENT_WEEK = CURRENT_WEEK))
     }else{
-      ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = rep(NA,4), 
-                                             forecasting_lower = rep(NA,4), 
-                                             forecasting_upper = rep(NA,4), 
-                                             nowcasting = rep(NA,4),
-                                             LEVELS = c(50,67,95,99),
+      ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = rep(NA,11), 
+                                             forecasting_lower = rep(NA,11), 
+                                             forecasting_upper = rep(NA,11), 
+                                             nowcasting = rep(NA,11),
+                                             LEVELS = c(10,20,30,40,50,60,70,80,90,95,98),
                                              CURRENT_WEEK = CURRENT_WEEK))
     }
   }
@@ -253,20 +254,20 @@ ARIMA_Imp_Dengue = function(DENGUE_SUB, PREEST, y, pi_type = 'Lag'){
       fit = try(arima(ts_input , order = c(2,0,2), seasonal = list(order = c(0,0,0))), silent = T)
       if(class(fit) != 'try-error'){
         nowcasting = exp(ts_input[length(ts_input)] - fit$residuals[length(fit$residuals)])-0.1
-        forecasting = forecast::forecast(fit,h=1, level = c(50,67,95,99), lambda = NULL) 
+        forecasting = forecast::forecast(fit,h=1, level = c(10,20,30,40,50,60,70,80,90,95,98), lambda = NULL) 
         ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = as.numeric(exp(forecasting$mean))-0.1, 
                                                forecasting_lower = as.numeric(exp(forecasting$lower))-0.1, 
                                                forecasting_upper = as.numeric(exp(forecasting$upper))-0.1, 
                                                nowcasting = nowcasting,
-                                               LEVELS = c(50,67,95,99),
+                                               LEVELS = c(10,20,30,40,50,60,70,80,90,95,98),
                                                CURRENT_WEEK = CURRENT_WEEK, 
                                                impnum = impnum))
       }else{
-        ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = rep(NA,4), 
-                                               forecasting_lower = rep(NA,4), 
-                                               forecasting_upper = rep(NA,4), 
-                                               nowcasting = rep(NA,4),
-                                               LEVELS = c(50,67,95,99),
+        ESTIMATES = rbind(ESTIMATES,data.frame(forecasting = rep(NA,11), 
+                                               forecasting_lower = rep(NA,11), 
+                                               forecasting_upper = rep(NA,11), 
+                                               nowcasting = rep(NA,11),
+                                               LEVELS = c(10,20,30,40,50,60,70,80,90,95,98),
                                                CURRENT_WEEK = CURRENT_WEEK, 
                                                impnum = impnum))
       }
@@ -310,16 +311,16 @@ Summarize_ARIMA = function(ESTIMATES, validation_values){
       ### WEIGHTED INTERVAL SCORE
       if(CURRENT_WEEK<NUM_WEEKS){
         QUANTILES = data.frame(quantile = log(DATA_CURRENT$forecasting_lower+0.1),
-                               alpha = c(0.50, 0.33, 0.05, 0.01),
-                               type = c('lower', 'lower', 'lower', 'lower'))
+                               alpha = c(0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.10, 0.05, 0.02),
+                               type = rep('lower',11))
         QUANTILES = rbind(QUANTILES, data.frame(quantile = log(DATA_CURRENT$forecasting_upper+0.1),
-                                                alpha = c(0.50, 0.33, 0.05, 0.01),
-                                                type = c('upper', 'upper', 'upper', 'upper')))
+                                                alpha = c(0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.10, 0.05, 0.02),
+                                                type = rep('upper',11)))
         QUANTILES = rbind(QUANTILES, data.frame(quantile = log(DATA_CURRENT$forecasting[1]+0.1),
                                                 alpha = 1, type = 'median'))
         median_val = QUANTILES[QUANTILES$type == 'median','quantile' ]
         
-        alphas = c(0.50, 0.33, 0.05, 0.01)
+        alphas = c(0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.10, 0.05, 0.02)
         IS = apply(cbind(alphas,log(validation_values[CURRENT_WEEK+1]+0.1)), 1, FUN = function(x,QUANTILES){Interval_score(QUANTILES,alpha = x[1], y=x[2])}, QUANTILES)
         RESULTS[['WIS']][CURRENT_WEEK,1] = (1/(length(alphas)+0.5))* (0.5*abs(log(validation_values[CURRENT_WEEK+1]+0.1) - median_val) + sum( (alphas/2)*IS))
       }
@@ -375,21 +376,20 @@ Ensemble_Estimates = function(STACK, ndraws = 100){
              CURRENT_WEEK = rep(STACK$CURRENT_WEEK, each = ndraws), 
              nowcasting = rep(STACK$nowcasting, each = ndraws))
   ### Gets averages and quantiles of nowcasts and forecasts across methods for each week
-  nowcast_mean = aggregate(nowcasting~CURRENT_WEEK, data = LONG_DRAWS,FUN = mean)
-  forecasting_mean = aggregate(forecasting~CURRENT_WEEK, data = LONG_DRAWS,FUN = mean)
-  forecasting_lower = aggregate(forecasting~CURRENT_WEEK, data = LONG_DRAWS,FUN = function(x){quantile(x,probs = c(0.25, 0.165, 0.025, 0.005))})
-  forecasting_upper = aggregate(forecasting~CURRENT_WEEK, data = LONG_DRAWS,FUN = function(x){quantile(x,probs = c(0.75, 0.835, 0.975, 0.995))})
+  nowcast_mean = aggregate(nowcasting~CURRENT_WEEK, data = LONG_DRAWS,FUN = function(x){quantile(x,probs = c(0.5))})
+  forecasting_mean = aggregate(forecasting~CURRENT_WEEK, data = LONG_DRAWS,FUN = function(x){quantile(x,probs = c(0.5))})
+  forecasting_lower = aggregate(forecasting~CURRENT_WEEK, data = LONG_DRAWS,FUN = function(x){quantile(x,probs = c(0.45,0.4,0.35,0.3,0.25,0.2,0.15,0.1,0.05,0.025,0.01))})
+  forecasting_upper = aggregate(forecasting~CURRENT_WEEK, data = LONG_DRAWS,FUN = function(x){quantile(x,probs = c(0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 0.975, 0.99))})
   ### Output dataset with same structure
   M = length(nowcast_mean[,1])
-  OUTPUT = data.frame(forecasting = rep(forecasting_mean$forecasting, 4),
+  OUTPUT = data.frame(forecasting = rep(forecasting_mean$forecasting, 11),
                       forecasting_lower = as.vector(forecasting_lower[,2]), 
                       forecasting_upper = as.vector(forecasting_upper[,2]), 
-                      nowcasting = rep(nowcast_mean$nowcasting, 4),
-                      LEVELS = rep(c(50, 67, 95, 99), each = M),
-                      CURRENT_WEEK = rep(c(1:M),4))
+                      nowcasting = rep(nowcast_mean$nowcasting, 11),
+                      LEVELS = rep(c(10,20,30,40,50,60,70,80,90,95,98), each = M),
+                      CURRENT_WEEK = rep(c(1:M),11))
   return(OUTPUT)
 }
-
 
 
 

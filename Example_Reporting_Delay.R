@@ -7,7 +7,7 @@
 
 ### Developed by Dr. Lauren J. Beesley, PhD
 ### Contact: lvandervort@lanl.gov
-### Last Updated: 12/10/2021
+### Last Updated: 3/10/2022
 
 ### Note: This script provides example code for handling delayed case reporting for an example dataset.
 ### This code uses data provided as part of the R package NobBS (Version 0.1.0) on CRAN.
@@ -106,7 +106,7 @@ ggplot(PILONG)+
   scale_x_continuous(breaks =year_limits$min_week + 25, labels = year_limits$Years)+
   scale_color_identity(name = '', breaks=c('gray', 'blue', 'red'),labels = c('Observed Data', 'Local (prev. 6 weeks)', 'Lag (prev. 2 yrs)'), guide = 'legend')+
   theme_classic()+
-  guides(size = F)+
+  guides(size = 'none')+
   xlab('Season')+ylab(expression("Estimated inverse reporting factor, " ~ pi[ts](0)))+
   labs(title = 'Estimated Lag-0 Reporting Probabilities for Dengue Fever')+
   theme(legend.position = 'top', legend.text= element_text(size = 12))
